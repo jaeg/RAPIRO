@@ -21,10 +21,10 @@ uint8_t eyes[3] = { 0, 0, 0};
 // Fine angle adjustments (degrees)
 int trim[MAXSN] = { 0,  // Head yaw
                     0,  // Waist yaw
-                    0,  // R Sholder roll
+                    20,  // R Sholder roll
                     0,  // R Sholder pitch
                     0,  // R Hand grip
-                    0,  // L Sholder roll
+                    -20,  // L Sholder roll
                     0,  // L Sholder pitch
                     0,  // L Hand grip
                     0,  // R Foot yaw
@@ -156,6 +156,8 @@ uint8_t motion[MAXMN][MAXFN][16]={
 }
 };
 
+int servoPins[12] = {10,11,9,8,7,12,13,14,4,2,15,16};
+
 void setup()  {
   servo[0].attach(10);   // Head yaw
   servo[1].attach(11);   // Waist yaw
@@ -175,8 +177,10 @@ void setup()  {
   
   for( i = 0; i < MAXSN; i++) {
     targetAngle[i] = motion[0][0][i] << SHIFT;
+
     nowAngle[i] = targetAngle[i];
-    servo[i].write((nowAngle[i] >> SHIFT) + trim[i]);
+    
+    servo[i].write((nowAngle[i] >> SHIFT) + trim[i]);    
   }
   for(i = 0; i < 3; i++) {
     targetBright[i] = 0 << SHIFT;
@@ -255,7 +259,15 @@ void loop()  {
   if(endTime > millis()) {
     remainingTime = (endTime - millis()) / 10;
     for( i = 0; i < MAXSN; i++) {
+      if (nowAngle[i] == targetAngle[i]) {
+        servo[i].detach();
+        continue;
+      }
       nowAngle[i] = targetAngle[i] - (deltaAngle[i] * remainingTime);
+
+      if (servo[i].attached() == false) {
+        servo[i].attach(servoPins[i]);
+      }
       servo[i].write((nowAngle[i] >> SHIFT) + trim[i]);
     }
     for( i = 0; i < 3; i++) {
